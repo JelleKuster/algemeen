@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI in Onderwijs Quiz</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        #quiz-container {
+            background-color: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+        }
+        .option {
+            display: block;
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #ecf0f1;
+            border: 1px solid #bdc3c7;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .option:hover {
+            background-color: #d5dbdb;
+        }
+        .selected {
+            background-color: #3498db;
+            color: #fff;
+        }
+        #submit-btn, #next-btn {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin-top: 20px;
+            background-color: #2ecc71;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        #result-container {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+        #progress-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #ecf0f1;
+            margin-top: 20px;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        #progress {
+            width: 0%;
+            height: 100%;
+            background-color: #3498db;
+            transition: width 0.5s;
+        }
+        #timer {
+            text-align: center;
+            font-size: 18px;
+            margin-top: 10px;
+        }
+        #score {
+            text-align: right;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="quiz-container">
+        <h1>AI in Onderwijs Quiz</h1>
+        <div id="timer">Tijd: <span id="time-left">60</span> seconden</div>
+        <div id="score">Score: <span id="current-score">0</span></div>
+        <div id="progress-bar"><div id="progress"></div></div>
+        <div id="question-container"></div>
+        <div id="options-container"></div>
+        <button id="submit-btn">Indienen</button>
+        <div id="result-container"></div>
+        <button id="next-btn" style="display:none;">Volgende Vraag</button>
+    </div>
+
+    <script>
+        const vragen = [
+            {
+                vraag: "Wat is het hoofddoel van de Academie Sport en Bewegen (ASB) met betrekking tot AI in het onderwijs?",
+                opties: [
+                    "Het volledig verbieden van AI-tools",
+                    "Het omarmen van AI binnen ethische normen waar het waarde toevoegt",
+                    "Het negeren van AI-ontwikkelingen in het onderwijs",
+                    "Het gebruik van AI alleen voor administratieve taken"
+                ],
+                juistAntwoord: 1,
+                uitleg: "Het document stelt dat de ASB-benadering is: 'We omarmen AI, binnen onze normen en waarden, daar waar het van meerwaarde kan zijn.'"
+            },
+            {
+                vraag: "Welke van de volgende is GEEN potentieel gebruik van AI voor professionals in het onderwijs?",
+                opties: [
+                    "Brainstormen en ideeëngeneratie",
+                    "Schrijfhulp en contentcreatie",
+                    "Het volledig vervangen van menselijke docenten",
+                    "Ondersteuning bij onderzoeksactiviteiten"
+                ],
+                juistAntwoord: 2,
+                uitleg: "Het document noemt verschillende toepassingen van AI voor onderwijsprofessionals, maar het volledig vervangen van menselijke docenten wordt niet genoemd. In plaats daarvan benadrukt het document het belang van het vinden van een balans tussen AI-integratie en menselijke interactie."
+            },
+            // Voeg hier meer vragen toe
+        ];
+
+        let huidigeVraag = 0;
+        let score = 0;
+        let timer;
+        let tijdOver = 60;
+
+        function toonVraag() {
+            const vraag = vragen[huidigeVraag];
+            document.getElementById('question-container').innerHTML = `<h2>${vraag.vraag}</h2>`;
+            const optiesHtml = vraag.opties.map((optie, index) => 
+                `<div class="option" data-index="${index}">${optie}</div>`
+            ).join('');
+            document.getElementById('options-container').innerHTML = optiesHtml;
+            document.getElementById('result-container').innerHTML = '';
+            document.getElementById('submit-btn').style.display = 'block';
+            document.getElementById('next-btn').style.display = 'none';
+            updateVoortgang();
+            startTimer();
+
+            document.querySelectorAll('.option').forEach(optie => {
+                optie.addEventListener('click', selecteerOptie);
+            });
+        }
+
+        function selecteerOptie(e) {
+            document.querySelectorAll('.option').forEach(optie => {
+                optie.classList.remove('selected');
+            });
+            e.target.classList.add('selected');
+        }
+
+        function controleerAntwoord() {
+            const geselecteerd = document.querySelector('.option.selected');
+            if (!geselecteerd) return;
+
+            const geselecteerdIndex = parseInt(geselecteerd.dataset.index);
+            const vraag = vragen[huidigeVraag];
+
+            clearInterval(timer);
+
+            if (geselecteerdIndex === vraag.juistAntwoord) {
+                document.getElementById('result-container').innerHTML = `<p style="color: green;">Correct! ${vraag.uitleg}</p>`;
+                score++;
+            } else {
+                document.getElementById('result-container').innerHTML = `<p style="color: red;">Onjuist. Het juiste antwoord was: ${vraag.opties[vraag.juistAntwoord]}. ${vraag.uitleg}</p>`;
+            }
+
+            document.getElementById('submit-btn').style.display = 'none';
+            document.getElementById('next-btn').style.display = 'block';
+            updateScore();
+        }
+
+        function volgendeVraag() {
+            huidigeVraag++;
+            if (huidigeVraag < vragen.length) {
+                toonVraag();
+            } else {
+                toonEindresultaat();
+            }
+        }
+
+        function updateVoortgang() {
+            const voortgang = ((huidigeVraag + 1) / vragen.length) * 100;
+            document.getElementById('progress').style.width = `${voortgang}%`;
+        }
+
+        function startTimer() {
+            tijdOver = 60;
+            clearInterval(timer);
+            timer = setInterval(() => {
+                tijdOver--;
+                document.getElementById('time-left').textContent = tijdOver;
+                if (tijdOver <= 0) {
+                    clearInterval(timer);
+                    controleerAntwoord();
+                }
+            }, 1000);
+        }
+
+        function updateScore() {
+            document.getElementById('current-score').textContent = score;
+        }
+
+        function toonEindresultaat() {
+            document.getElementById('quiz-container').innerHTML = `
+                <h1>Quiz Voltooid!</h1>
+                <p>Je eindscore is: ${score} van de ${vragen.length}</p>
+                <button onclick="location.reload()">Opnieuw Spelen</button>
+            `;
+        }
+
+        document.getElementById('submit-btn').addEventListener('click', controleerAntwoord);
+        document.getElementById('next-btn').addEventListener('click', volgendeVraag);
+
+        toonVraag();
+    </script>
+</body>
+</html>
